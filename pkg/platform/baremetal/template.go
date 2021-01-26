@@ -48,6 +48,12 @@ module "bare-metal-{{.ClusterName}}" {
   worker_macs        = {{.WorkerMacs}}
   worker_domains     = {{.WorkerDomains}}
 
+  # bootkube
+  api_servers          = {{.ApiServers}}
+  api_servers_ips      = {{.ApiServersIps}}
+  etcd_servers_domains = {{.EtcdServersDomains}}
+  etcd_servers_ips     = {{.EtcdEndpoints}}
+
   {{- if .NetworkMTU }}
   network_mtu = {{ .NetworkMTU }}
   {{- end }}

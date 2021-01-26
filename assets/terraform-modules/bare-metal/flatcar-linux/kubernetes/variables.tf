@@ -74,6 +74,29 @@ variable "k8s_domain_name" {
   type        = string
 }
 
+variable "api_servers" {
+  description = "List of domain names used to reach kube-apiserver from within the cluster"
+  type        = list(string)
+  default     = []
+}
+
+variable "api_servers_ips" {
+  description = "List of additional IPv4 addresses to be included in the kube-apiserver TLS certificate"
+  type        = list(string)
+  default     = []
+}
+
+variable "etcd_servers_domains" {
+  type        = list(string)
+  description = "List of domain names used to reach etcd servers."
+}
+
+variable "etcd_servers_ips" {
+  description = "List of Private IPv4 addresses of the controller nodes running etcd."
+  type        = list(string)
+  default     = []
+}
+
 variable "ssh_keys" {
   type        = list(string)
   description = "SSH public keys for user 'core'"
