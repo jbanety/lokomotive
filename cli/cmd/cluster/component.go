@@ -16,6 +16,8 @@ package cluster
 
 import (
 	"fmt"
+	kubelinstor "github.com/kinvolk/lokomotive/pkg/components/kube-linstor"
+	kubelinstorstorageclass "github.com/kinvolk/lokomotive/pkg/components/kube-linstor-storage-class"
 
 	"github.com/kinvolk/lokomotive/pkg/components"
 	awsebscsidriver "github.com/kinvolk/lokomotive/pkg/components/aws-ebs-csi-driver"
@@ -54,6 +56,8 @@ func componentsConfigs() map[string]components.Component {
 		httpbin.Name:                    httpbin.NewConfig(),
 		inspektorgadget.Name:            inspektorgadget.NewConfig(),
 		istiooperator.Name:              istiooperator.NewConfig(),
+		kubelinstor.Name:				 kubelinstor.NewConfig(),
+		kubelinstorstorageclass.Name:	 kubelinstorstorageclass.NewConfig(),
 		linkerd.Name:                    linkerd.NewConfig(),
 		metallb.Name:                    metallb.NewConfig(),
 		metricsserver.Name:              metricsserver.NewConfig(),
