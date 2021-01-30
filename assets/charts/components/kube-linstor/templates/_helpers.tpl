@@ -31,6 +31,12 @@ Generates linstor.toml config file
   user = "{{ .Values.controller.db.user }}"
   password = "{{ .Values.controller.db.password }}"
   connection_url = "{{ .Values.controller.db.connectionUrl }}"
+{{- if .Values.controller.db.caCertificate }}
+  ca_certificate = "/tls/db/ca.pem"
+{{- end }}
+{{- if .Values.controller.db.client_certificate }}
+    client_certificate = "/tls/db/client.pem"
+{{- end }}
 [http]
   port = {{ .Values.controller.port }}
 {{- if or .Values.controller.ssl.enabled }}

@@ -15,6 +15,7 @@
 package kubelinstor
 
 import (
+	b64 "encoding/base64"
 	"fmt"
 
 	"github.com/hashicorp/hcl/v2"
@@ -33,7 +34,8 @@ const (
 )
 
 type component struct {
-	Namespace      string         `hcl:"namespace,optional"`
+	Namespace      string          `hcl:"namespace,optional"`
+	NameOverride   string          `hcl:"name_override,optional"`
 	Controller     *Controller     `hcl:"controller,block"`
 	Satellite      *Satellite      `hcl:"satellite,block"`
 	Csi            *Csi            `hcl:"csi,block"`
@@ -121,9 +123,13 @@ type StorkScheduler struct {
 }
 
 type Db struct {
-	User          string `hcl:"user,optional"`
-	Password      string `hcl:"password,optional"`
-	ConnectionUrl string `hcl:"connection_url"`
+	User                 string `hcl:"user,optional"`
+	Password             string `hcl:"password,optional"`
+	ConnectionUrl        string `hcl:"connection_url"`
+	CaCertificate        string `hcl:"ca_certificate,optional"`
+	CaCertificateRaw     string
+	ClientCertificate    string `hcl:"client_certificate,optional"`
+	ClientCertificateRaw string
 }
 
 // NewConfig returns new cert-manager component configuration with default values set.
@@ -132,6 +138,7 @@ type Db struct {
 func NewConfig() *component {
 	return &component{
 		Namespace: "linstor",
+		NameOverride: "linstor",
 		Controller: &Controller{
 			Enabled: true,
 			ImageTag: "v1.11.0",
@@ -254,6 +261,39 @@ func (c *component) RenderManifests() (map[string]string, error) {
 	renderedFiles, err := util.RenderChart(helmChart, Name, c.Namespace, values)
 	if err != nil {
 		return nil, fmt.Errorf("rendering chart: %w", err)
+	}
+
+	if len(c.Controller.Db.CaCertificate) > 0 || len(c.Controller.Db.ClientCertificate) > 0 {
+		if len(c.Controller.Db.CaCertificate) > 0 {
+			c.Controller.Db.CaCertificateRaw = b64.StdEncoding.EncodeToString([]byte(c.Controller.Db.CaCertificate))
+		}
+		if len(c.Controller.Db.ClientCertificate) > 0 {
+			c.Controller.Db.ClientCertificateRaw = b64.StdEncoding.EncodeToString([]byte(c.Controller.Db.ClientCertificate))
+		}
+		dbSecrets, err := template.Render(DbSecrets, c)
+		if err != nil {
+			return nil, fmt.Errorf("rendering db secrets manifest: %w", err)
+		}
+		renderedFiles["db-tls.yaml"] = dbSecrets
+	}
+
+	podSecurityPolicy, err := template.Render(PodSecurityPolicy, c)
+	if err != nil {
+		return nil, fmt.Errorf("rendering pod security policy manifest: %w", err)
+	}
+	renderedFiles["pod-security-policy.yaml"] = podSecurityPolicy
+
+	if c.Controller.Enabled {
+		controllerRBACRole, err := template.Render(ControllerRBACRole, c)
+		if err != nil {
+			return nil, fmt.Errorf("rendering controller rbac role manifest: %w", err)
+		}
+		renderedFiles["controller-rbac-role.yaml"] = controllerRBACRole
+		controllerRBACRoleBinding, err := template.Render(ControllerRBACRoleBinding, c)
+		if err != nil {
+			return nil, fmt.Errorf("rendering controller rbac role binding manifest: %w", err)
+		}
+		renderedFiles["controller-rbac-role.yaml"] = controllerRBACRoleBinding
 	}
 
 	return renderedFiles, nil

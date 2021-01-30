@@ -16,6 +16,7 @@
 package kubelinstor
 
 const chartValuesTmpl = `
+nameOverride: "{{ .NameOverride }}"
 controller:
   enabled: {{ .Controller.Enabled }}
   image:
@@ -61,6 +62,12 @@ controller:
     password: "{{ .Controller.Db.Password }}"
 	{{- end }}
     connectionUrl: "{{ .Controller.Db.ConnectionUrl }}"
+	{{- if .Controller.Db.CaCertificate }}
+	caCertificate: true
+	{{- end }}
+	{{- if .Controller.Db.ClientCertificate }}
+	clientCertificate: true
+	{{- end }}
 
 satellite:
   enabled: {{ .Satellite.Enabled }}

@@ -57,6 +57,10 @@ spec:
         - name: client-tls
           mountPath: /tls/client
         {{- end }}
+        {{- if or .Values.controller.db.client_certificate .Values.controller.db.caCertificate }}
+        - name: db-tls
+          mountPath: /tls/db
+        {{- end }}
         {{- if .Values.satellite.ssl.enabled }}
         - name: satellite-tls
           mountPath: /tls/satellite
@@ -190,5 +194,10 @@ spec:
       - name: satellite-tls
         secret:
           secretName: {{ $fullName }}-satellite-tls
+      {{- end }}
+      {{- if or .Values.controller.db.client_certificate .Values.controller.db.caCertificate }}
+      - name: db-tls
+        secret:
+          secretName: {{ $fullName }}-db-tls
       {{- end }}
 {{- end }}
