@@ -88,7 +88,7 @@ type Csi struct {
 	NodeSelectorRaw string
 	Tolerations     []util.Toleration `hcl:"toleration,block"`
 	TolerationsRaw  string
-	Images   		map[string]*Image `hcl:"image,block"`
+	Images   		map[string]*Image `hcl:"images,optional"`
 }
 
 // High Availability Controller will speed up the fail over process for stateful

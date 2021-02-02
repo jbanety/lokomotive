@@ -110,10 +110,10 @@ csi:
   enabled: {{ .Csi.Enabled }}
   image:
 {{- range $name, $image := .Csi.Images }}
-  {{ $name }}:
-    repository: {{ $image.Repository }}
-    tag: {{ $image.Tag }}
-    pullPolicy: {{ $image.PullPolicy }}
+    {{ $name }}:
+      repository: {{ $image.Repository }}
+      tag: {{ $image.Tag }}
+      pullPolicy: {{ $image.PullPolicy }}
 {{- end }}
 
   controller:
