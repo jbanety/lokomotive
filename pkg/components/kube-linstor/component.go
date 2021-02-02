@@ -61,7 +61,7 @@ type Controller struct {
 	Tolerations     []util.Toleration `hcl:"toleration,block"`
 	TolerationsRaw  string
 	Db				*Db				  `hcl:"db,block"`
-	ImageTag		string			  `hcl:"image_tag,optional"`
+	Image   		*Image			  `hcl:"image,block"`
 }
 
 // Linstor-satellites run on every node, they listen and perform controller tasks
@@ -77,7 +77,7 @@ type Satellite struct {
 	NodeSelectorRaw      string
 	Tolerations          []util.Toleration    `hcl:"toleration,block"`
 	TolerationsRaw       string
-	ImageTag		     string			   	  `hcl:"image_tag,optional"`
+	Image   		     *Image	              `hcl:"image,block"`
 }
 
 // Linstor CSI driver provides compatibility level for adding Linstor support
@@ -88,7 +88,7 @@ type Csi struct {
 	NodeSelectorRaw string
 	Tolerations     []util.Toleration `hcl:"toleration,block"`
 	TolerationsRaw  string
-	ImageTag		string			  `hcl:"image_tag,optional"`
+	Images   		map[string]*Image `hcl:"image,block"`
 }
 
 // High Availability Controller will speed up the fail over process for stateful
@@ -100,7 +100,7 @@ type HaController struct {
 	NodeSelectorRaw string
 	Tolerations     []util.Toleration `hcl:"toleration,block"`
 	TolerationsRaw  string
-	ImageTag		string			  `hcl:"image_tag,optional"`
+	Image   		*Image			  `hcl:"image,block"`
 }
 
 // Stork is a scheduler extender plugin for Kubernetes which allows a storage
@@ -113,7 +113,7 @@ type Stork struct {
 	NodeSelectorRaw string
 	Tolerations     []util.Toleration `hcl:"toleration,block"`
 	TolerationsRaw  string
-	ImageTag		string			  `hcl:"image_tag,optional"`
+	Image   		*Image			  `hcl:"image,block"`
 }
 
 type StorkScheduler struct {
@@ -123,7 +123,7 @@ type StorkScheduler struct {
 	NodeSelectorRaw string
 	Tolerations     []util.Toleration `hcl:"toleration,block"`
 	TolerationsRaw  string
-	ImageTag		string			  `hcl:"image_tag,optional"`
+	Image   		*Image			  `hcl:"image,block"`
 }
 
 type Db struct {
@@ -140,6 +140,12 @@ type Db struct {
 	EtcdPrefix			 string `hcl:"etcd_prefix,optional"`
 }
 
+type Image struct {
+	Repository  string `hcl:"repository,optional"`
+	Tag         string `hcl:"tag,optional"`
+	PullPolicy  string `hcl:"pull_policy,optional"`
+}
+
 // NewConfig returns new cert-manager component configuration with default values set.
 //
 //nolint:golint
@@ -149,7 +155,11 @@ func NewConfig() *component {
 		NameOverride: "linstor",
 		Controller: &Controller{
 			Enabled: true,
-			ImageTag: "v1.11.0",
+			Image: &Image{
+				Repository: "docker.io/kvaps/linstor-controller",
+				Tag: "v1.11.1",
+				PullPolicy: "IfNotPresent",
+			},
 			ReplicaCount: 2,
 			Port: 3370,
 			SSL: true,
@@ -160,7 +170,11 @@ func NewConfig() *component {
 		},
 		Satellite: &Satellite{
 			Enabled: true,
-			ImageTag: "v1.11.0",
+			Image: &Image{
+				Repository: "docker.io/kvaps/linstor-satellite",
+				Tag: "v1.11.1",
+				PullPolicy: "IfNotPresent",
+			},
 			Port: 3366,
 			SSL: true,
 			SSLPort: 3367,
@@ -169,21 +183,69 @@ func NewConfig() *component {
 		},
 		Csi: &Csi{
 			Enabled: true,
-			ImageTag: "v1.11.0",
+			Images: map[string]*Image{
+				"linstorCsiPlugin": &Image{
+					Repository: "docker.io/kvaps/linstor-csi",
+					Tag: "v1.11.1",
+					PullPolicy: "IfNotPresent",
+				},
+				"csiProvisioner": &Image{
+					Repository: "k8s.gcr.io/sig-storage/csi-provisioner",
+					Tag: "v2.0.4",
+					PullPolicy: "IfNotPresent",
+				},
+				"csiAttacher": &Image{
+					Repository: "k8s.gcr.io/sig-storage/csi-attacher",
+					Tag: "v3.0.2",
+					PullPolicy: "IfNotPresent",
+				},
+				"csiResizer": &Image{
+					Repository: "k8s.gcr.io/sig-storage/csi-resizer",
+					Tag: "v1.0.1",
+					PullPolicy: "IfNotPresent",
+				},
+				"csiSnapshotter": &Image{
+					Repository: "k8s.gcr.io/sig-storage/csi-snapshotter",
+					Tag: "v3.0.2",
+					PullPolicy: "IfNotPresent",
+				},
+				"csiNodeDriverRegistrar": &Image{
+					Repository: "k8s.gcr.io/sig-storage/csi-node-driver-registrar",
+					Tag: "v2.0.1",
+					PullPolicy: "IfNotPresent",
+				},
+				"csiLivenessProbe": &Image{
+					Repository: "k8s.gcr.io/sig-storage/livenessprobe",
+					Tag: "v2.1.0",
+					PullPolicy: "IfNotPresent",
+				},
+			},
 		},
 		HaController: &HaController{
 			Enabled: true,
-			ImageTag: "v1.11.0",
+			Image: &Image{
+				Repository: "docker.io/kvaps/linstor-ha-controller",
+				Tag: "v1.11.1",
+				PullPolicy: "IfNotPresent",
+			},
 			ReplicaCount: 2,
 		},
 		Stork: &Stork{
 			Enabled: true,
-			ImageTag: "v1.11.0",
+			Image: &Image{
+				Repository: "docker.io/kvaps/linstor-stork",
+				Tag: "v1.11.1",
+				PullPolicy: "IfNotPresent",
+			},
 			ReplicaCount: 2,
 		},
 		StorkScheduler: &StorkScheduler{
 			Enabled: true,
-			ImageTag: "v1.20.1",
+			Image: &Image{
+				Repository: "k8s.gcr.io/kube-scheduler",
+				Tag: "v1.20.1",
+				PullPolicy: "IfNotPresent",
+			},
 			ReplicaCount: 2,
 		},
 	}

@@ -20,10 +20,9 @@ nameOverride: "{{ .NameOverride }}"
 controller:
   enabled: {{ .Controller.Enabled }}
   image:
-    repository: docker.io/kvaps/linstor-controller
-    tag: {{ .Controller.ImageTag }}
-    pullPolicy: IfNotPresent
-    pullSecrets: []
+    repository: {{ .Controller.Image.Repository }}
+    tag: {{ .Controller.Image.Tag }}
+    pullPolicy: {{ .Controller.Image.PullPolicy }}
 
   replicaCount: {{ .Controller.ReplicaCount }}
 
@@ -82,10 +81,9 @@ controller:
 satellite:
   enabled: {{ .Satellite.Enabled }}
   image:
-    repository: docker.io/kvaps/linstor-satellite
-    tag: {{ .Satellite.ImageTag }}
-    pullPolicy: IfNotPresent
-    pullSecrets: []
+    repository: {{ .Satellite.Image.Repository }}
+    tag: {{ .Satellite.Image.Tag }}
+    pullPolicy: {{ .Satellite.Image.PullPolicy }}
 
   port: {{ .Satellite.Port }}
   ssl:
@@ -111,34 +109,12 @@ satellite:
 csi:
   enabled: {{ .Csi.Enabled }}
   image:
-    linstorCsiPlugin:
-      repository: docker.io/kvaps/linstor-csi
-      tag: {{ .Csi.ImageTag }}
-      pullPolicy: IfNotPresent
-    csiProvisioner:
-      repository: k8s.gcr.io/sig-storage/csi-provisioner
-      tag: v2.0.4
-      pullPolicy: IfNotPresent
-    csiAttacher:
-      repository: k8s.gcr.io/sig-storage/csi-attacher
-      tag: v3.0.2
-      pullPolicy: IfNotPresent
-    csiResizer:
-      repository: k8s.gcr.io/sig-storage/csi-resizer
-      tag: v1.0.1
-      pullPolicy: IfNotPresent
-    csiSnapshotter:
-      repository: k8s.gcr.io/sig-storage/csi-snapshotter
-      tag: v3.0.2
-      pullPolicy: IfNotPresent
-    csiNodeDriverRegistrar:
-      repository: k8s.gcr.io/sig-storage/csi-node-driver-registrar
-      tag: v2.0.1
-      pullPolicy: IfNotPresent
-    csiLivenessProbe:
-      repository: k8s.gcr.io/sig-storage/livenessprobe
-      tag: v2.1.0
-      pullPolicy: IfNotPresent
+{{- range $name, $image := .Csi.Images }}
+  {{ $name }}:
+    repository: {{ $image.Repository }}
+    tag: {{ $image.Tag }}
+    pullPolicy: {{ $image.PullPolicy }}
+{{- end }}
 
   controller:
     replicaCount: {{ .Controller.ReplicaCount }}
@@ -169,9 +145,9 @@ csi:
 haController:
   enabled: {{ .HaController.Enabled }}
   image:
-    repository: docker.io/kvaps/linstor-ha-controller
-    tag: {{ .HaController.ImageTag }}
-    pullPolicy: IfNotPresent
+    repository: {{ .HaController.Image.Repository }}
+    tag: {{ .HaController.Image.Tag }}
+    pullPolicy: {{ .HaController.Image.PullPolicy }}
 
   replicaCount: {{ .HaController.ReplicaCount }}
   
@@ -186,9 +162,9 @@ haController:
 stork:
   enabled: {{ .Stork.Enabled }}
   image:
-    repository: docker.io/kvaps/linstor-stork
-    tag: {{ .Stork.ImageTag }}
-    pullPolicy: IfNotPresent
+    repository: {{ .Stork.Image.Repository }}
+    tag: {{ .Stork.Image.Tag }}
+    pullPolicy: {{ .Stork.Image.PullPolicy }}
 
   replicaCount: {{ .Stork.ReplicaCount }}
 
@@ -203,9 +179,9 @@ stork:
 storkScheduler:
   enabled: {{ .StorkScheduler.Enabled }}
   image:
-    repository: k8s.gcr.io/kube-scheduler
-    tag: {{ .StorkScheduler.ImageTag }}
-    pullPolicy: IfNotPresent
+    repository: {{ .StorkScheduler.Image.Repository }}
+    tag: {{ .StorkScheduler.Image.Tag }}
+    pullPolicy: {{ .StorkScheduler.Image.PullPolicy }}
 
   replicaCount: {{ .StorkScheduler.ReplicaCount }}
 
