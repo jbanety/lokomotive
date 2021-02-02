@@ -62,11 +62,21 @@ controller:
     password: "{{ .Controller.Db.Password }}"
 	{{- end }}
     connectionUrl: "{{ .Controller.Db.ConnectionUrl }}"
+    tls: {{ .Controller.Db.TLS }}
 	{{- if .Controller.Db.CaCertificate }}
-	caCertificate: true
+    ca: |
+{{ .Controller.Db.CaCertificateRaw }}
 	{{- end }}
 	{{- if .Controller.Db.ClientCertificate }}
-	clientCertificate: true
+    cert: |
+{{ .Controller.Db.ClientCertificateRaw }}
+	{{- end }}
+	{{- if .Controller.Db.ClientKey }}
+    key: |
+{{ .Controller.Db.ClientKeyRaw }}
+	{{- end }}
+    {{- if .Controller.Db.EtcdPrefix }}
+    etcdPrefix: "{{ .Controller.Db.EtcdPrefix }}"
 	{{- end }}
 
 satellite:

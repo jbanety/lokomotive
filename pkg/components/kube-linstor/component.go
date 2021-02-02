@@ -15,12 +15,15 @@
 package kubelinstor
 
 import (
-	b64 "encoding/base64"
+	"crypto/ecdsa"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
+	"errors"
 	"fmt"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
-
+	"github.com/kinvolk/lokomotive/internal"
 	"github.com/kinvolk/lokomotive/internal/template"
 	"github.com/kinvolk/lokomotive/pkg/components"
 	"github.com/kinvolk/lokomotive/pkg/components/util"
@@ -31,6 +34,7 @@ const (
 	// Name represents kube-linstor component name as it should be referenced in function calls
 	// and in configuration.
 	Name = "kube-linstor"
+    Indentation = 6
 )
 
 type component struct {
@@ -126,10 +130,14 @@ type Db struct {
 	User                 string `hcl:"user,optional"`
 	Password             string `hcl:"password,optional"`
 	ConnectionUrl        string `hcl:"connection_url"`
+	TLS                  bool   `hcl:"tls,optional"`
 	CaCertificate        string `hcl:"ca_certificate,optional"`
 	CaCertificateRaw     string
 	ClientCertificate    string `hcl:"client_certificate,optional"`
 	ClientCertificateRaw string
+	ClientKey            string `hcl:"client_key,optional"`
+	ClientKeyRaw         string
+	EtcdPrefix			 string `hcl:"etcd_prefix,optional"`
 }
 
 // NewConfig returns new cert-manager component configuration with default values set.
@@ -146,6 +154,9 @@ func NewConfig() *component {
 			Port: 3370,
 			SSL: true,
 			SSLPort: 3371,
+			Db: &Db{
+				TLS: false,
+			},
 		},
 		Satellite: &Satellite{
 			Enabled: true,
@@ -253,6 +264,22 @@ func (c *component) RenderManifests() (map[string]string, error) {
 		return nil, fmt.Errorf("rendering node selector failed: %w", err)
 	}
 
+	if len(c.Controller.Db.CaCertificate) > 0 {
+		c.Controller.Db.CaCertificateRaw = internal.Indent(c.Controller.Db.CaCertificate, Indentation)
+	}
+
+	if len(c.Controller.Db.ClientCertificate) > 0 {
+		c.Controller.Db.ClientCertificateRaw = internal.Indent(c.Controller.Db.ClientCertificate, Indentation)
+	}
+
+	if len(c.Controller.Db.ClientKey) > 0 {
+		ConvertedClientKey, err := ensurePKCS8Key(c.Controller.Db.ClientKey)
+		if err != nil {
+			return nil, fmt.Errorf("converting private key: %w", err)
+		}
+		c.Controller.Db.ClientKeyRaw = internal.Indent(ConvertedClientKey, Indentation)
+	}
+
 	values, err := template.Render(chartValuesTmpl, c)
 	if err != nil {
 		return nil, fmt.Errorf("rendering chart values template: %w", err)
@@ -261,20 +288,6 @@ func (c *component) RenderManifests() (map[string]string, error) {
 	renderedFiles, err := util.RenderChart(helmChart, Name, c.Namespace, values)
 	if err != nil {
 		return nil, fmt.Errorf("rendering chart: %w", err)
-	}
-
-	if len(c.Controller.Db.CaCertificate) > 0 || len(c.Controller.Db.ClientCertificate) > 0 {
-		if len(c.Controller.Db.CaCertificate) > 0 {
-			c.Controller.Db.CaCertificateRaw = b64.StdEncoding.EncodeToString([]byte(c.Controller.Db.CaCertificate))
-		}
-		if len(c.Controller.Db.ClientCertificate) > 0 {
-			c.Controller.Db.ClientCertificateRaw = b64.StdEncoding.EncodeToString([]byte(c.Controller.Db.ClientCertificate))
-		}
-		dbSecrets, err := template.Render(DbSecrets, c)
-		if err != nil {
-			return nil, fmt.Errorf("rendering db secrets manifest: %w", err)
-		}
-		renderedFiles["db-tls.yaml"] = dbSecrets
 	}
 
 	podSecurityPolicy, err := template.Render(PodSecurityPolicy, c)
@@ -293,7 +306,22 @@ func (c *component) RenderManifests() (map[string]string, error) {
 		if err != nil {
 			return nil, fmt.Errorf("rendering controller rbac role binding manifest: %w", err)
 		}
-		renderedFiles["controller-rbac-role.yaml"] = controllerRBACRoleBinding
+		renderedFiles["controller-rbac-role-binding.yaml"] = controllerRBACRoleBinding
+		csiControllerRBACRoleBinding, err := template.Render(CsiControllerRBACRoleBinding, c)
+		if err != nil {
+			return nil, fmt.Errorf("rendering csi controller rbac role binding manifest: %w", err)
+		}
+		renderedFiles["csi-controller-rbac-role-binding.yaml"] = csiControllerRBACRoleBinding
+		haControllerRBACRoleBinding, err := template.Render(HaControllerRBACRoleBinding, c)
+		if err != nil {
+			return nil, fmt.Errorf("rendering ha controller rbac role binding manifest: %w", err)
+		}
+		renderedFiles["ha-controller-rbac-role-binding.yaml"] = haControllerRBACRoleBinding
+		storkSchedulerRBACRoleBinding, err := template.Render(StorkSchedulerRBACRoleBinding, c)
+		if err != nil {
+			return nil, fmt.Errorf("rendering stork scheduler rbac role binding manifest: %w", err)
+		}
+		renderedFiles["stork-scheduler-rbac-role-binding.yaml"] = storkSchedulerRBACRoleBinding
 	}
 
 	return renderedFiles, nil
@@ -306,4 +334,33 @@ func (c *component) Metadata() components.Metadata {
 			Name: c.Namespace,
 		},
 	}
+}
+
+func ensurePKCS8Key(der string) (string, error) {
+
+	privPem, _ := pem.Decode([]byte(der))
+
+	if key, err := x509.ParsePKCS8PrivateKey(privPem.Bytes); err == nil {
+		switch key.(type) {
+		case *rsa.PrivateKey, *ecdsa.PrivateKey:
+			return der, nil
+		default:
+			return "", errors.New("crypto/tls: found unknown private key type in PKCS#8 wrapping")
+		}
+	}
+
+	if key, err := x509.ParsePKCS1PrivateKey(privPem.Bytes); err == nil {
+		pkcs8Key, err := x509.MarshalPKCS8PrivateKey(key)
+		if err != nil {
+			return "", fmt.Errorf("marshaling pkcs1 to pkcs8: %w", err)
+		}
+		return string(pem.EncodeToMemory(
+			&pem.Block{
+				Type:  "PRIVATE KEY",
+				Bytes: pkcs8Key,
+			},
+		)), nil
+	}
+
+	return "", errors.New("unknown private key type")
 }

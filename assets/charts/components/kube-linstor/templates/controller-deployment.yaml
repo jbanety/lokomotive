@@ -10,6 +10,8 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: {{ .Values.controller.replicaCount }}
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: {{ $fullName }}-controller
@@ -43,7 +45,9 @@ spec:
           keytool -importcert -noprompt -deststorepass linstor -keypass linstor -file /tls/satellite/tls.crt -alias linstor-satellite -destkeystore /config/ssl/certificates.jks
           {{- end }}
           rm -f "$tmp"
-        imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
+          {{- if .Values.controller.db.tls }}
+          cp -rf /tls/db /config/ssl/db
+          {{- end }}
         volumeMounts:
         - name: config
           mountPath: /config
@@ -57,13 +61,13 @@ spec:
         - name: client-tls
           mountPath: /tls/client
         {{- end }}
-        {{- if or .Values.controller.db.client_certificate .Values.controller.db.caCertificate }}
-        - name: db-tls
-          mountPath: /tls/db
-        {{- end }}
         {{- if .Values.satellite.ssl.enabled }}
         - name: satellite-tls
           mountPath: /tls/satellite
+        {{- end }}
+        {{- if .Values.controller.db.tls }}
+        - name: db-tls
+          mountPath: /tls/db
         {{- end }}
       {{- end }}
       {{- if .Values.controller.initSettings.enabled }}
@@ -195,7 +199,7 @@ spec:
         secret:
           secretName: {{ $fullName }}-satellite-tls
       {{- end }}
-      {{- if or .Values.controller.db.client_certificate .Values.controller.db.caCertificate }}
+      {{- if .Values.controller.db.tls }}
       - name: db-tls
         secret:
           secretName: {{ $fullName }}-db-tls

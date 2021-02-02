@@ -31,11 +31,14 @@ Generates linstor.toml config file
   user = "{{ .Values.controller.db.user }}"
   password = "{{ .Values.controller.db.password }}"
   connection_url = "{{ .Values.controller.db.connectionUrl }}"
-{{- if .Values.controller.db.caCertificate }}
-  ca_certificate = "/tls/db/ca.pem"
+{{- if .Values.controller.db.tls }}
+  ca_certificate = "/config/ssl/db/ca.crt"
+  client_certificate = "/config/ssl/db/tls.crt"
+  client_key_pkcs8_pem = "/config/ssl/db/tls.key"
 {{- end }}
-{{- if .Values.controller.db.client_certificate }}
-    client_certificate = "/tls/db/client.pem"
+{{- if .Values.controller.db.etcdPrefix }}
+  [db.etcd]
+  prefix = "{{ .Values.controller.db.etcdPrefix }}"
 {{- end }}
 [http]
   port = {{ .Values.controller.port }}

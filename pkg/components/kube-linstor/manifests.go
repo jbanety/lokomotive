@@ -14,27 +14,6 @@
 
 package kubelinstor
 
-const DbSecrets = `
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ .NameOverride }}-db-tls
-  namespace: {{ .Namespace }}
-  annotations:
-    "helm.sh/resource-policy": "keep"
-    "helm.sh/hook": "pre-install"
-    "helm.sh/hook-delete-policy": "before-hook-creation"
-    "directives.qbec.io/update-policy": "never"
-type: kubernetes.io/tls
-data:
-{{- if .Controller.Db.ClientCertificateRaw }}
-  tls.crt: {{ .Controller.Db.ClientCertificateRaw }}
-{{- end }}
-{{- if .Controller.Db.CaCertificate }}
-  ca.crt: {{ .Controller.Db.CaCertificateRaw }}
-{{- end }}
-`
-
 const PodSecurityPolicy = `
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
@@ -69,10 +48,66 @@ const ControllerRBACRole = `
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ .NameOverride }}-controller-psp
+  name: {{ .NameOverride }}-psp
 rules:
   - apiGroups: ["extensions"]
     resources: ["podsecuritypolicies"]
     resourceNames: ["{{ .NameOverride }}"]
     verbs: ["use"]
+`
+
+const ControllerRBACRoleBinding = `
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .NameOverride }}-controller-psp
+roleRef:
+  kind: Role
+  name: {{ .NameOverride }}-psp
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: {{ .NameOverride }}-controller
+`
+
+const CsiControllerRBACRoleBinding = `
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .NameOverride }}-csi-controller-psp
+roleRef:
+  kind: Role
+  name: {{ .NameOverride }}-psp
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: {{ .NameOverride }}-csi-controller-sa
+`
+
+const HaControllerRBACRoleBinding = `
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .NameOverride }}-ha-controller-psp
+roleRef:
+  kind: Role
+  name: {{ .NameOverride }}-psp
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: {{ .NameOverride }}-ha-controller
+`
+
+const StorkSchedulerRBACRoleBinding = `
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .NameOverride }}-stork-scheduler-psp
+roleRef:
+  kind: Role
+  name: {{ .NameOverride }}-psp
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: {{ .NameOverride }}-stork-scheduler
 `

@@ -21,10 +21,6 @@ rules:
   - apiGroups: ["storage.k8s.io"]
     resources: ["volumeattachments/status"]
     verbs: ["patch"]
-  - apiGroups: ["extensions"]
-    resources: ["podsecuritypolicies"]
-    resourceNames: ["{{ $fullName }}"]
-    verbs: ["use"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
