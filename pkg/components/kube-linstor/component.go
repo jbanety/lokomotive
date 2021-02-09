@@ -352,40 +352,6 @@ func (c *component) RenderManifests() (map[string]string, error) {
 		return nil, fmt.Errorf("rendering chart: %w", err)
 	}
 
-	podSecurityPolicy, err := template.Render(PodSecurityPolicy, c)
-	if err != nil {
-		return nil, fmt.Errorf("rendering pod security policy manifest: %w", err)
-	}
-	renderedFiles["pod-security-policy.yaml"] = podSecurityPolicy
-
-	if c.Controller.Enabled {
-		controllerRBACRole, err := template.Render(ControllerRBACRole, c)
-		if err != nil {
-			return nil, fmt.Errorf("rendering controller rbac role manifest: %w", err)
-		}
-		renderedFiles["controller-rbac-role.yaml"] = controllerRBACRole
-		controllerRBACRoleBinding, err := template.Render(ControllerRBACRoleBinding, c)
-		if err != nil {
-			return nil, fmt.Errorf("rendering controller rbac role binding manifest: %w", err)
-		}
-		renderedFiles["controller-rbac-role-binding.yaml"] = controllerRBACRoleBinding
-		csiControllerRBACRoleBinding, err := template.Render(CsiControllerRBACRoleBinding, c)
-		if err != nil {
-			return nil, fmt.Errorf("rendering csi controller rbac role binding manifest: %w", err)
-		}
-		renderedFiles["csi-controller-rbac-role-binding.yaml"] = csiControllerRBACRoleBinding
-		haControllerRBACRoleBinding, err := template.Render(HaControllerRBACRoleBinding, c)
-		if err != nil {
-			return nil, fmt.Errorf("rendering ha controller rbac role binding manifest: %w", err)
-		}
-		renderedFiles["ha-controller-rbac-role-binding.yaml"] = haControllerRBACRoleBinding
-		storkSchedulerRBACRoleBinding, err := template.Render(StorkSchedulerRBACRoleBinding, c)
-		if err != nil {
-			return nil, fmt.Errorf("rendering stork scheduler rbac role binding manifest: %w", err)
-		}
-		renderedFiles["stork-scheduler-rbac-role-binding.yaml"] = storkSchedulerRBACRoleBinding
-	}
-
 	return renderedFiles, nil
 }
 
