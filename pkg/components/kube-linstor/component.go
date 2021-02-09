@@ -78,6 +78,7 @@ type Satellite struct {
 	Tolerations          []util.Toleration    `hcl:"toleration,block"`
 	TolerationsRaw       string
 	Image   		     *Image	              `hcl:"image,block"`
+	AutoJoinCluster      bool                 `hcl:"auto_join_cluster,optional"`
 }
 
 // Linstor CSI driver provides compatibility level for adding Linstor support
@@ -180,6 +181,7 @@ func NewConfig() *component {
 			SSLPort: 3367,
 			OverwriteDrbdConf: true,
 			UpdateMaxUnavailable: 40,
+			AutoJoinCluster: true,
 		},
 		Csi: &Csi{
 			Enabled: true,

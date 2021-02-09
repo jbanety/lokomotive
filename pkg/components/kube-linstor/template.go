@@ -90,9 +90,11 @@ satellite:
     enabled: {{ .Satellite.SSL }}
     port: {{ .Satellite.SSLPort }}
 
-  # Oerwrite drbd.conf and global_common.conf files. This option will enable
+  # Overwrite drbd.conf and global_common.conf files. This option will enable
   # usage-count=no and udev-always-use-vnr options by default
   overwriteDrbdConf: {{ .Satellite.OverwriteDrbdConf }}
+
+  autoJoinCluster: {{ .Satellite.AutoJoinCluster }}
 
   # How many nodes can simultaneously download new image
   update:
