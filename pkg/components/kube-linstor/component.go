@@ -79,6 +79,7 @@ type Satellite struct {
 	TolerationsRaw       string
 	Image   		     *Image	              `hcl:"image,block"`
 	AutoJoinCluster      bool                 `hcl:"auto_join_cluster,optional"`
+	StoragePools		 *StoragePools	      `hcl:"storage_pools,block"`
 }
 
 // Linstor CSI driver provides compatibility level for adding Linstor support
@@ -147,6 +148,39 @@ type Image struct {
 	PullPolicy  string `hcl:"pull_policy,optional"`
 }
 
+// StoragePools hold lists of linstor storage pools.
+type StoragePools struct {
+	LVMPools     []*StoragePoolLVM     `hcl:"lvm_pool,block"`
+	LVMThinPools []*StoragePoolLVMThin `hcl:"lvm_thin_pool,block"`
+	ZFSPools     []*StoragePoolZFS     `hcl:"zfs_pool,block"`
+}
+
+// StoragePoolLVM represents LVM storage pool
+type StoragePoolLVM struct {
+	Name               string   `hcl:"name,label"`
+	VolumeGroup        string   `hcl:"volume_group"`
+	DevicePaths        []string `hcl:"device_paths,optional"`
+	RaidLevel	       string   `hcl:"raid_level,optional"`
+	VDO                bool     `hcl:"vdo,optional"`
+	VdoLogicalSizeKib  int      `hcl:"vdo_logical_size_kib,optional"`
+	VdoSlabSizeKib     int      `hcl:"vdo_slab_size_kib,optional"`
+}
+
+// StoragePoolLVMThin represents LVM Thin storage pool
+type StoragePoolLVMThin struct {
+	Name        string `hcl:"name,label"`
+	VolumeGroup string `hcl:"volume_group"`
+	ThinVolume  string `hcl:"thin_volume"`
+	RaidLevel   string `hcl:"raid_level,optional"`
+}
+
+// StoragePoolZFS represents ZFS storage pool
+type StoragePoolZFS struct {
+	Name  string `hcl:"name,label"`
+	ZPool string `hcl:"z_pool"`
+	Thin  bool   `hcl:"thin"`
+}
+
 // NewConfig returns new cert-manager component configuration with default values set.
 //
 //nolint:golint
@@ -182,6 +216,11 @@ func NewConfig() *component {
 			OverwriteDrbdConf: true,
 			UpdateMaxUnavailable: 40,
 			AutoJoinCluster: true,
+			StoragePools: &StoragePools{
+				LVMPools:     make([]*StoragePoolLVM, 0),
+				LVMThinPools: make([]*StoragePoolLVMThin, 0),
+				ZFSPools:     make([]*StoragePoolZFS, 0),
+			},
 		},
 		Csi: &Csi{
 			Enabled: true,
@@ -348,7 +387,7 @@ func (c *component) RenderManifests() (map[string]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("rendering chart values template: %w", err)
 	}
-
+fmt.Print(values)
 	renderedFiles, err := util.RenderChart(helmChart, Name, c.Namespace, values)
 	if err != nil {
 		return nil, fmt.Errorf("rendering chart: %w", err)

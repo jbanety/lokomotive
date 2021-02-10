@@ -95,6 +95,49 @@ satellite:
   overwriteDrbdConf: {{ .Satellite.OverwriteDrbdConf }}
 
   autoJoinCluster: {{ .Satellite.AutoJoinCluster }}
+{{- if or .Satellite.StoragePools.LVMPools .Satellite.StoragePools.LVMThinPools .Satellite.StoragePools.ZFSPools }}
+  storagePools:
+{{- if .Satellite.StoragePools.LVMPools }}
+    lvmPools:
+{{- range .Satellite.StoragePools.LVMPools }}
+      - name: {{ .Name }}
+        volumeGroup: {{ .VolumeGroup }}
+{{- if .DevicePaths }}
+		devicePaths:
+{{- range .DevicePaths }}
+		  - {{ . }}
+{{- end }}
+{{- end }}
+{{- if .RaidLevel }}
+        raidLevel: {{ .RaidLevel }}
+{{- end }}
+        vdo: {{ .VDO }}
+{{- if .VDO }}
+		vdoLogicalSizeKib: {{ .VdoLogicalSizeKib }}
+		vdoSlabSizeKib: {{ .VdoSlabSizeKib }}
+{{- end }}	
+{{- end }}
+{{- end }}
+{{- if .Satellite.StoragePools.LVMThinPools }}
+    lvmThinPools:
+{{- range .Satellite.StoragePools.LVMThinPools }}
+      - name: {{ .Name }}
+        volumeGroup: {{ .VolumeGroup }}
+        thinVolume: {{ .ThinVolume }}
+{{- if .RaidLevel }}
+        raidLevel: {{ .RaidLevel }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if .Satellite.StoragePools.ZFSPools }}
+    zfsPools:
+{{- range .Satellite.StoragePools.ZFSPools }}
+      - name: {{ .Name }}
+        zPool: {{ .ZPool }}
+        thin: {{ .Thin }}
+{{- end }}
+{{- end }}
+{{- end }}
 
   # How many nodes can simultaneously download new image
   update:
