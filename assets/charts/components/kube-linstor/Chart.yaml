@@ -1,0 +1,20 @@
+name: linstor
+description: Containerized LINSTOR SDS for Kubernetes, ready for production use.
+version: 1.11.1
+appVersion: 1.11.1
+icon: https://hsto.org/getpro/habr/post_images/e47/594/c07/e47594c0721332fb46493d20339bb1be.png
+keywords:
+  - linstor
+  - drbd
+  - storage
+  - csi
+home: https://github.com/kvaps/kube-linstor
+sources:
+  - https://hub.docker.com/r/kvaps/linstor-controller
+  - https://hub.docker.com/r/kvaps/linstor-satellite
+  - https://hub.docker.com/r/kvaps/linstor-csi
+  - https://hub.docker.com/r/kvaps/linstor-stork
+  - https://hub.docker.com/r/kvaps/linstor-ha-controller
+maintainers:
+  - name: kvaps
+    email: kvapss@gmail.com
