@@ -88,6 +88,7 @@ data "ct_config" "controller-ignitions" {
   count = length(var.controller_names)
   content = templatefile("${path.module}/cl/controller.yaml.tmpl", {
     domain_name = var.controller_domains[count.index]
+    etcd_name   = var.controller_names[count.index]
     etcd_domain = var.etcd_servers_domains[count.index]
     etcd_initial_cluster = join(
       ",",
