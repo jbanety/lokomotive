@@ -63,6 +63,10 @@ type config struct {
 	NetworkIPAutodetectionMethod string              `hcl:"network_ip_autodetection_method,optional"`
 	CLCSnippets                  map[string][]string `hcl:"clc_snippets,optional"`
 	KubeAPIServerExtraFlags      []string
+	ApiServers                   []string            `hcl:"api_servers"`
+	ApiServersIps                []string            `hcl:"api_servers_ips,optional"`
+	EtcdServersDomains           []string            `hcl:"etcd_servers_domains"`
+	EtcdEndpoints                []string            `hcl:"etcd_endpoints,optional"`
 }
 
 const (
@@ -199,6 +203,30 @@ func createTerraformConfigFile(cfg *config, terraformPath string) error {
 		return fmt.Errorf("marshaling controller names: %w", err)
 	}
 
+	apiServers, err := json.Marshal(cfg.ApiServers)
+	if err != nil {
+		// TODO: Render manually instead of marshaling.
+		return fmt.Errorf("marshaling api servers: %w", err)
+	}
+
+	apiServersIps, err := json.Marshal(cfg.ApiServersIps)
+	if err != nil {
+		// TODO: Render manually instead of marshaling.
+		return fmt.Errorf("marshaling api server ips: %w", err)
+	}
+
+	etcdServersDomains, err := json.Marshal(cfg.EtcdServersDomains)
+	if err != nil {
+		// TODO: Render manually instead of marshaling.
+		return fmt.Errorf("marshaling etcd servers domains: %w", err)
+	}
+
+	etcdEndpoints, err := json.Marshal(cfg.EtcdEndpoints)
+	if err != nil {
+		// TODO: Render manually instead of marshaling.
+		return fmt.Errorf("marshaling etcd endpoints: %w", err)
+	}
+
 	terraformCfg := struct {
 		CachedInstall                string
 		ClusterName                  string
@@ -230,6 +258,10 @@ func createTerraformConfigFile(cfg *config, terraformPath string) error {
 		DownloadProtocol             string
 		NetworkIPAutodetectionMethod string
 		CLCSnippets                  map[string][]string
+		ApiServers			    	 string
+		ApiServersIps			     string
+		EtcdServersDomains		     string
+		EtcdEndpoints		         string
 	}{
 		CachedInstall:                cfg.CachedInstall,
 		ClusterName:                  cfg.ClusterName,
@@ -261,6 +293,10 @@ func createTerraformConfigFile(cfg *config, terraformPath string) error {
 		DownloadProtocol:             cfg.DownloadProtocol,
 		NetworkIPAutodetectionMethod: cfg.NetworkIPAutodetectionMethod,
 		CLCSnippets:                  cfg.CLCSnippets,
+		ApiServers:				      string(apiServers),
+		ApiServersIps:			      string(apiServersIps),
+		EtcdServersDomains:		      string(etcdServersDomains),
+		EtcdEndpoints:		          string(etcdEndpoints),
 	}
 
 	if err := t.Execute(f, terraformCfg); err != nil {

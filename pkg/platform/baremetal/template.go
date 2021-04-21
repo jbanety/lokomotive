@@ -100,6 +100,12 @@ EOF
     {{- end }}
   }
   {{- end }}
+
+  # bootkube
+  api_servers          = {{.ApiServers}}
+  api_servers_ips      = {{.ApiServersIps}}
+  etcd_servers_domains = {{.EtcdServersDomains}}
+  etcd_servers_ips     = {{.EtcdEndpoints}}
 }
 
 terraform {

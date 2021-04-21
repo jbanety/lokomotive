@@ -3,9 +3,11 @@ module "bootkube" {
   source = "../../../bootkube"
 
   cluster_name                    = var.cluster_name
-  api_servers                     = [var.k8s_domain_name]
-  etcd_servers                    = var.controller_domains
-  etcd_endpoints                  = []
+  api_servers                     = var.api_servers
+  api_servers_external            = [var.k8s_domain_name]
+  api_servers_ips                 = var.api_servers_ips
+  etcd_servers                    = var.etcd_servers_domains
+  etcd_endpoints                  = var.etcd_servers_ips
   asset_dir                       = var.asset_dir
   network_mtu                     = var.network_mtu
   network_ip_autodetection_method = var.network_ip_autodetection_method
